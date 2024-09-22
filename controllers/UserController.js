@@ -1,6 +1,9 @@
 const UserDAO = require('../dao/userDAO');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const tokenBlacklist = require('../token/tokenBlacklist');
+
+
 
 class UserController {
     // Get all Users
@@ -139,6 +142,16 @@ class UserController {
         } catch (error) {
             res.status(500).json({ message: 'Server error', error });
         }
+    }
+
+
+    async logout(req, res) {
+        const token = req.headers['authorization']?.split(' ')[1];
+        if (!token) {
+            return res.status(401).json({ message: 'No token provided' });
+        }
+        tokenBlacklist.add(token);
+        res.status(200).json({ message: 'Logged out successfully' });
     }
 
 

@@ -1,9 +1,12 @@
 const jwt = require('jsonwebtoken');
+const tokenBlacklist = require('../token/tokenBlacklist');
+
 
 function verifyToken(req, res, next) {
     const token = req.header('Authorization')?.split(' ')[1];
+    
 
-    if (!token) {
+    if (!token || tokenBlacklist.has(token)) {
         return res.status(401).json({ message: 'Access denied, no token provided' });
     }
 

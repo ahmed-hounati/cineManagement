@@ -15,5 +15,6 @@ router.post('/admin', verifyToken, checkRole("admin"), (req, res) => UserControl
 router.get('/user/:id', verifyToken, (req, res) => UserController.getUser(req, res));
 router.put('/user/:id', verifyToken, checkRole('admin'), (req, res) => UserController.updateUser(req, res));
 router.delete('/user/:id', verifyToken, checkRole('admin'), (req, res) => UserController.deleteUser(req, res));
+router.post('/logout', verifyToken, (req, res) => UserController.logout(req, res));
 
 module.exports = router;
