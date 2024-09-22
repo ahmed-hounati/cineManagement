@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const Admin = require('./models/UserModel');
 const userRoutes = require('./routes/userRoutes');
+const filmRoutes = require('./routes/filmRoutes');
 require('dotenv').config();
 
 
@@ -20,6 +21,7 @@ mongoose.connect(process.env.MONGO_URI, {
     .catch((err) => console.error('Error connecting to MongoDB:', err));
 
 app.use('/api', userRoutes);
+app.use('/api/film', filmRoutes);
 
 
 async function initializeAdmin() {

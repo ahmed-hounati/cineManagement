@@ -11,8 +11,7 @@ function checkRole(requiredRole) {
         try {
             const verified = jwt.verify(token, process.env.JWT_SECRET);
             req.user = verified;
-            console.log(req.user);
-            
+            console.log(req.user);            
 
             if (req.user.role !== requiredRole) {
                 return res.status(403).json({ message: `Access denied, you need to be an ${requiredRole}` });
