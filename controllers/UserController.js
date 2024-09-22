@@ -28,11 +28,11 @@ class UserController {
     }
 
     // Create a new User
-    async createUser(req, res) {
-        const { id, status, password, email, name } = req.body;
+    async createAdmin(req, res) {
+        const { status, password, email, name, role } = req.body;
         try {
             const hashedPassword = await bcrypt.hash(password, 8);
-            const newUser = await UserDAO.create({ id, status, password: hashedPassword, email, name });
+            const newUser = await UserDAO.create({ status, password: hashedPassword, email, name, role });
             res.status(201).json(newUser);
         } catch (error) {
             res.status(400).json({ message: error.message });
@@ -85,7 +85,7 @@ class UserController {
 
             // Generate JWT token
             const token = jwt.sign(
-                { id: User._id, email: User.email, name: User.name },
+                { id: User._id, email: User.email, name: User.name, role: User.role },
                 process.env.JWT_SECRET,
                 { expiresIn: '1h' }
             );

@@ -38,7 +38,6 @@ async function initializeAdmin() {
             await newAdmin.save();
             console.log('Admin user created with email: admin@gmail.com');
         } else {
-            console.log('SuperAdmin exists');
         }
     } catch (error) {
         console.error('Error initializing admin:', error);
