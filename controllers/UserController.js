@@ -97,33 +97,30 @@ class UserController {
     }
 
     async register(req, res) {
-        const { email, password, status, role } = req.body;
+        const { name, email, password, status, role } = req.body;
 
         // Check if email is already registered
         try {
-            const existingUser = await User.findOne({ email });
+            const existingUser = await UserDAO.findByEmail(email);
             if (existingUser) {
                 return res.status(400).json({ message: 'Email already in use' });
             }
 
-            // Hash the password
-            const salt = await bcrypt.genSalt(10);
-            const hashedPassword = await bcrypt.hash(password, salt);
+            const hashedPassword = await bcrypt.hash(password, 8);
+
 
             // Create a new user
-            const newUser = new User({
+            const newUser = await UserDAO.create({
+                name,
                 email,
                 password: hashedPassword,
                 status: status || 'active',
                 role: role
             });
 
-            // Save the new user to the database
-            const savedUser = await newUser.save();
-
             // Generate JWT token
             const token = jwt.sign(
-                { _id: savedUser._id, role: savedUser.role },
+                { _id: newUser._id, role: newUser.role },
                 process.env.JWT_SECRET,
                 { expiresIn: '1h' }
             );
@@ -132,10 +129,10 @@ class UserController {
             res.header('Authorization', `Bearer ${token}`).json({
                 message: 'Registration successful',
                 user: {
-                    _id: savedUser._id,
-                    email: savedUser.email,
-                    status: savedUser.status,
-                    role: savedUser.role
+                    _id: newUser._id,
+                    email: newUser.email,
+                    status: newUser.status,
+                    role: newUser.role
                 },
                 token
             });
