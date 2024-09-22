@@ -2,7 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const Admin = require('./models/UserModel');
-const adminRoutes = require('./routes/adminRoutes');
+const userRoutes = require('./routes/userRoutes');
 require('dotenv').config();
 
 
@@ -19,20 +19,21 @@ mongoose.connect(process.env.MONGO_URI, {
 })
     .catch((err) => console.error('Error connecting to MongoDB:', err));
 
-app.use('/api/admin', adminRoutes);
+app.use('/api', userRoutes);
 
 
 async function initializeAdmin() {
     try {
         const admin = await Admin.findOne({ email: 'admin@gmail.com' });
         if (!admin) {
-            const hashedPassword = await bcrypt.hash('12345678', 8);
+            const hashedPassword = await bcrypt.hash('123456789', 8);
 
             const newAdmin = new Admin({
                 name: 'admin',
                 email: 'admin@gmail.com',
                 password: hashedPassword,
-                status: 'active'
+                status: 'active',
+                role: 'admin'
             });
             await newAdmin.save();
             console.log('Admin user created with email: admin@gmail.com');

@@ -87,12 +87,60 @@ class UserController {
             const token = jwt.sign(
                 { id: User._id, email: User.email, name: User.name },
                 process.env.JWT_SECRET,
-                { expiresIn: '1h' } // Token valid for 1 hour
+                { expiresIn: '1h' }
             );
 
             res.status(200).json({ token });
         } catch (error) {
             res.status(500).json({ message: error.message });
+        }
+    }
+
+    async register(req, res) {
+        const { email, password, status, role } = req.body;
+
+        // Check if email is already registered
+        try {
+            const existingUser = await User.findOne({ email });
+            if (existingUser) {
+                return res.status(400).json({ message: 'Email already in use' });
+            }
+
+            // Hash the password
+            const salt = await bcrypt.genSalt(10);
+            const hashedPassword = await bcrypt.hash(password, salt);
+
+            // Create a new user
+            const newUser = new User({
+                email,
+                password: hashedPassword,
+                status: status || 'active',
+                role: role
+            });
+
+            // Save the new user to the database
+            const savedUser = await newUser.save();
+
+            // Generate JWT token
+            const token = jwt.sign(
+                { _id: savedUser._id, role: savedUser.role },
+                process.env.JWT_SECRET,
+                { expiresIn: '1h' }
+            );
+
+            // Respond with the token and newly created user details
+            res.header('Authorization', `Bearer ${token}`).json({
+                message: 'Registration successful',
+                user: {
+                    _id: savedUser._id,
+                    email: savedUser.email,
+                    status: savedUser.status,
+                    role: savedUser.role
+                },
+                token
+            });
+        } catch (error) {
+            res.status(500).json({ message: 'Server error', error });
         }
     }
 
