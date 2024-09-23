@@ -6,6 +6,7 @@ const userRoutes = require('./routes/userRoutes');
 const filmRoutes = require('./routes/filmRoutes');
 const salleRoutes = require('./routes/salleRoutes');
 const seanceRoutes = require('./routes/seanceRoutes');
+const reservationRoutes = require('./routes/reservationRoutes');
 require('dotenv').config();
 
 
@@ -24,7 +25,9 @@ mongoose.connect(process.env.MONGO_URI, {
 
 app.use('/api', userRoutes);
 app.use('/api/film', filmRoutes);
+app.use('/api/salle', salleRoutes);
 app.use('/api/seance', seanceRoutes);
+app.use('/api/reservation', reservationRoutes);
 
 
 
