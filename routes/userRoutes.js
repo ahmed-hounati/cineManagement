@@ -8,6 +8,8 @@ const router = express.Router();
 
 router.post('/auth/login', (req, res) => UserController.login(req, res));
 router.post('/auth/register', (req, res) => UserController.register(req, res));
+router.post('/auth/forget', (req, res) => UserController.forget(req, res));
+router.post('/auth/reset-password/:id', (req, res) => UserController.resetPassword(req, res));
 router.get('/users/me', verifyToken, (req, res) => UserController.me(req, res));
 
 

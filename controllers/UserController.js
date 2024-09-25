@@ -155,6 +155,54 @@ class UserController {
     }
 
 
+    async forget(req, res) {
+        const { email } = req.body;
+        const user = await UserDAO.findByEmail(email);
+        if (!user) {
+            return res.status(401).json({ message: 'Email not found' });
+        }
+
+        const resetToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+        const resetLink = `https://your-app.com/reset-password/${resetToken}`;
+
+        try {
+            await sendMail(
+                user.email,
+                "Reset Password",
+                `Click on the following link to reset your password: ${resetLink}`
+            );
+            res.status(200).json({ message: 'email sent to reset your password' });
+        } catch (emailError) {
+            console.error("Error sending email:", emailError.message);
+            res.status(500).json({ message: 'Failed to send reset email' });
+        }
+    }
+
+
+    async resetPassword(req, res) {
+        const { token } = req.params;
+        const { newPassword } = req.body;
+
+        try {
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            const user = await UserDAO.findById(decoded.id);
+            if (!user) {
+                return res.status(404).json({ message: 'User not found' });
+            }
+
+
+            const hashedPassword = await bcrypt.hash(newPassword, 8);
+            user.password = hashedPassword;
+            await user.save();
+
+            res.status(200).json({ message: 'Password reset successful' });
+        } catch (error) {
+            res.status(400).json({ message: 'Invalid or expired token' });
+        }
+    }
+
+
 }
 
 module.exports = new UserController();
