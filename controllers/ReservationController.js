@@ -4,6 +4,7 @@ const salleDAO = require('../dao/salleDAO');
 const seanceDAO = require('../dao/seanceDAO');
 const jwt = require('jsonwebtoken');
 const userDAO = require('../dao/userDAO');
+const sendMail = require('../email');
 
 
 
@@ -34,10 +35,9 @@ class ReservationController {
 
     // Create a new Reservation
     async create(req, res) {
-        const { seanceId, place } = req.body;
+        const { seanceId, places } = req.body;
 
         try {
-            // Extract the token from the Authorization header
             const token = req.headers['authorization']?.split(' ')[1];
             if (!token) {
                 return res.status(401).json({ message: 'Token not provided' });
@@ -48,6 +48,9 @@ class ReservationController {
             const userId = decoded.id;
 
             const user = await userDAO.findById(userId);
+            if (!user) {
+                return res.status(404).json({ message: 'User not found' });
+            }
 
             // Find the seance
             const seance = await seanceDAO.findById(seanceId);
@@ -58,34 +61,56 @@ class ReservationController {
             // Find the salle associated with the seance
             const salleId = seance.salle._id;
             const salle = await salleDAO.findById(salleId);
+            if (!salle) {
+                return res.status(404).json({ message: 'Salle not found' });
+            }
             const capacity = parseInt(salle.capacity);
 
-            // Check if the place is already reserved
-            const existingReservations = await ReservationDAO.findBySeanceAndPlace(seanceId, place);
-            if (existingReservations.length > 0) {
-                return res.status(400).json({ message: `Place ${place} is already reserved for this seance` });
+            // Check if any of the places are already reserved
+            for (let place of places) {
+                const existingReservations = await ReservationDAO.findBySeanceAndPlace(seanceId, place);
+                if (existingReservations.length > 0) {
+                    return res.status(400).json({ message: `Place ${place} is already reserved for this seance` });
+                }
             }
 
-            // Check the number of reservations for the seance
+            // Check the total number of reservations for the seance
             const reservationCount = await ReservationDAO.countReservationsBySeance(seanceId);
-            if (reservationCount >= capacity) {
-                return res.status(400).json({ message: 'The salle is fully booked for this seance' });
+            if (reservationCount + places.length > capacity) {
+                return res.status(400).json({ message: 'The salle does not have enough available places for this seance' });
             }
-
-            // Set the reservation status to "waiting"
-            const status = "waiting";
-
-            // Create the new reservation
-            const newReservation = await ReservationDAO.create({
-                status,
-                seance: seance,
-                place,
-                user: user
-            });
-
-            res.status(201).json(newReservation);
+            // Send confirmation email
+            try {
+                await sendMail(
+                    user.email,
+                    "Reservation Confirmation",
+                    `Your reservation for the seance ${seance.description} has been confirmed for places ${places.join(', ')}.`
+                );
+            } catch (emailError) {
+                console.error("Error sending email:", emailError.message);
+            }
+            let status = "waiting";
+            if (sendMail) {
+                let status = "Confirmed";
+                const newReservation = await ReservationDAO.create({
+                    status: status,
+                    seance: seanceId,
+                    places: places,
+                    user: user
+                });
+                res.status(201).json(newReservation);
+            } else {
+                const newReservation = await ReservationDAO.create({
+                    status: status,
+                    seance: seanceId,
+                    places: places,
+                    user: user
+                });
+                res.status(201).json(newReservation);
+            }
 
         } catch (error) {
+            console.error("Error creating Reservation:", error.message);
             res.status(500).json({ message: error.message });
         }
     }
@@ -94,7 +119,7 @@ class ReservationController {
     // Update a Reservation
     async updateReservation(req, res) {
         const { id } = req.params;
-        const { seanceId, place } = req.body;
+        const { seanceId, places } = req.body;
         try {
             const token = req.headers['authorization']?.split(' ')[1];
             if (!token) {
@@ -113,8 +138,9 @@ class ReservationController {
 
             // Check if the user owns the reservation
             const userId = reservation.user.toString();
+            const user = await userDAO.findById(userId);
             if (userIDe !== userId) {
-                return res.status(401).json({ message: 'You don\'t have permission to update this reservation' });
+                return res.status(401).json({ message: 'You don t have permission to update this reservation' });
             }
 
             // Find the seance
@@ -123,16 +149,19 @@ class ReservationController {
                 return res.status(404).json({ message: 'Seance not found' });
             }
 
-            // Find the salle associated with the seance
+            // Find the salle
             const salleId = seance.salle._id;
             const salle = await salleDAO.findById(salleId);
             const capacity = parseInt(salle.capacity);
 
-            // Check if the place is already reserved
-            const existingReservations = await ReservationDAO.findBySeanceAndPlace(seanceId, place);
-            if (existingReservations.length > 0) {
-                return res.status(400).json({ message: `Place ${place} is already reserved for this seance` });
+            // Check if any of the places are already reserved
+            for (let place of places) {
+                const existingReservations = await ReservationDAO.findBySeanceAndPlace(seanceId, place);
+                if (existingReservations.length > 0) {
+                    return res.status(400).json({ message: `Place ${place} is already reserved for this seance` });
+                }
             }
+
 
             // Check if the salle is fully booked
             const reservationCount = await ReservationDAO.countReservationsBySeance(seanceId);
@@ -140,21 +169,44 @@ class ReservationController {
                 return res.status(400).json({ message: 'The salle is fully booked for this seance' });
             }
 
-            // Update the reservation
-            const updatedReservation = await ReservationDAO.updateById(id, {
-                seance: seanceId,  // Reference by ID
-                place,
-                status: 'waiting'
-            });
 
-            if (!updatedReservation) {
-                return res.status(404).json({ message: 'Error updating Reservation' });
+
+            // Send confirmation email
+            try {
+                await sendMail(
+                    user.email,
+                    "Update in Your Reservation",
+                    `Your reservation is updated to the seance ${seance.description} with this places ${places.join(', ')}.`
+                );
+            } catch (emailError) {
+                console.error("Error sending email:", emailError.message);
             }
-
-            res.status(200).json(updatedReservation);
-
+            let status = "waiting";
+            if (sendMail) {
+                let status = "Confirmed";
+                // Update the reservation
+                const updatedReservation = await ReservationDAO.updateById(id, {
+                    seance: seanceId,
+                    places: places,
+                    status
+                });
+                if (!updatedReservation) {
+                    return res.status(404).json({ message: 'Error updating Reservation' });
+                }
+                res.status(200).json(updatedReservation);
+            } else {
+                const updatedReservation = await ReservationDAO.updateById(id, {
+                    seance: seanceId,
+                    places: places,
+                    status
+                });
+                if (!updatedReservation) {
+                    return res.status(404).json({ message: 'Error updating Reservation' });
+                }
+                res.status(200).json(updatedReservation);
+            }
         } catch (error) {
-            console.error("Error updating reservation:", error);  // Log the actual error
+            console.error("Error updating reservation:", error);
             res.status(500).json({ message: error.message });
         }
     }
@@ -172,6 +224,18 @@ class ReservationController {
             res.status(500).json({ message: error.message });
         }
     }
+
+
+
+    async getReservationsWithWaiting(req, res) {
+        try {
+            const waitingReservations = await ReservationDAO.find({ status: 'waiting' });
+            res.status(200).json(waitingReservations);
+        } catch (error) {
+            res.status(500).json({ message: error.message });
+        }
+    }
+
 
 
 }

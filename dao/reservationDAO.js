@@ -50,6 +50,14 @@ class ReservationDAO {
             throw new Error('Error deleting Reservation');
         }
     }
+
+    async find(query) {
+        try {
+            return await Reservation.find(query);
+        } catch (error) {
+            throw new Error('Error fetching reservations: ' + error.message);
+        }
+    }
 }
 
 module.exports = new ReservationDAO();
