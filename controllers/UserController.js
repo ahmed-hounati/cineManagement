@@ -2,6 +2,7 @@ const UserDAO = require('../dao/userDAO');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const tokenBlacklist = require('../token/tokenBlacklist');
+const sendMail = require('../email');
 
 
 
@@ -106,12 +107,10 @@ class UserController {
         try {
             const existingUser = await UserDAO.findByEmail(email);
             if (existingUser) {
-                return res.status(400).json({ message: 'Email already in use' });
+                return res.status(409).json({ message: 'Email already in use' });
             }
 
             const hashedPassword = await bcrypt.hash(password, 8);
-
-
             // Create a new user
             const newUser = await UserDAO.create({
                 name,
@@ -140,7 +139,7 @@ class UserController {
                 token
             });
         } catch (error) {
-            res.status(500).json({ message: 'Server error', error });
+            res.status(500).json({ message: 'Failed to register user' });
         }
     }
 
