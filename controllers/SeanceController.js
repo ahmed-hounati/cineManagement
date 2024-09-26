@@ -1,5 +1,6 @@
 const filmDAO = require('../dao/filmDAO');
-const salleDao = require('../dao/salleDAO');
+const reservationDAO = require('../dao/reservationDAO');
+const salleDAO = require('../dao/salleDAO');
 const SeanceDAO = require('../dao/seanceDAO');
 
 
@@ -84,6 +85,40 @@ class SeanceController {
             res.status(500).json({ message: error.message });
         }
     }
+
+    async getPlaces(req, res) {
+        const { id } = req.params;
+        try {
+            const seance = await SeanceDAO.findById(id);
+            if (!seance) {
+                return res.status(404).json({ message: 'Seance not found' });
+            }
+
+            const salleId = seance.salle._id;
+            const salle = await salleDAO.findById(salleId);
+            if (!salle) {
+                return res.status(404).json({ message: 'Salle not found' });
+            }
+
+            const capacity = parseInt(salle.capacity);
+
+            const allPlaces = Array.from({ length: capacity }, (_, index) => `${index + 1}`);
+
+            const availablePlaces = [];
+
+
+            for (let place of allPlaces) {
+                const existingReservations = await reservationDAO.findBySeanceAndPlace(id, place);
+                if (existingReservations.length === 0) {
+                    availablePlaces.push(place);
+                }
+            }
+            return res.status(200).json(availablePlaces);
+        } catch (error) {
+            return res.status(500).json({ message: error.message });
+        }
+    }
+
 
 
 }

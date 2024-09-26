@@ -263,7 +263,7 @@ describe('UserController', () => {
         //     });
         // });
 
-        it('should return 409 if email is already in use', async () => {
+        it('should create a new user and return a token', async () => {
             UserDAO.findByEmail.mockResolvedValue({}); // Mock existing user
 
             await UserController.register(req, res);

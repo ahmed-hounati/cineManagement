@@ -18,8 +18,12 @@ class ReservationDAO {
     }
 
     async findBySeanceAndPlace(seanceId, place) {
-        return await Reservation.find({ seance: seanceId, place });
+        return await Reservation.find({
+            seance: seanceId,
+            places: place
+        });
     }
+
 
     async countReservationsBySeance(seanceId) {
         return await Reservation.countDocuments({ seance: seanceId });
