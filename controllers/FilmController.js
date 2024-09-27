@@ -1,4 +1,5 @@
 const FilmDAO = require('../dao/filmDAO');
+const FilmModel = require('../models/FilmModel');
 
 
 
@@ -30,13 +31,32 @@ class FilmController {
     // Create a new Film
     async create(req, res) {
         const { status, duration, description, name } = req.body;
+
+        // Check if file is uploaded
+        if (!req.file) {
+            return res.status(400).json({ message: 'Image is required' });
+        }
+
         try {
-            const newFilm = await FilmDAO.create({ status, duration, description, name });
+            const imagePath = req.file.path;
+
+            const newFilm = await FilmModel.create({
+                status,
+                duration,
+                description,
+                name,
+                image: {
+                    data: imagePath,
+                    contentType: req.file.mimetype
+                }
+            });
+
             res.status(201).json(newFilm);
         } catch (error) {
             res.status(400).json({ message: error.message });
         }
     }
+
 
     // Update a Film
     async updateFilm(req, res) {
