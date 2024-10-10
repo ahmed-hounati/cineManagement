@@ -9,33 +9,70 @@ class SeanceController {
     // Get all Seances
     async getSeances(req, res) {
         try {
-            const Seances = await SeanceDAO.findAll();
-            res.status(200).json(Seances);
+            const seances = await SeanceDAO.findAll();
+
+            const populatedSeances = await Promise.all(
+                seances.map(async (seance) => {
+                    const [film, salle] = await Promise.all([
+                        filmDAO.findById(seance.film),
+                        salleDAO.findById(seance.salle)
+                    ]);
+                    seance.film = film;
+                    seance.salle = salle;
+
+                    return {
+                        ...seance.toObject(),
+                        film,
+                        salle
+                    }
+                })
+            );
+
+            res.status(200).json(populatedSeances);
         } catch (error) {
             res.status(500).json({ message: error.message });
         }
     }
 
+
     // Get an Seance by ID
     async getSeance(req, res) {
         const { id } = req.params;
         try {
-            const Seance = await SeanceDAO.findById(id);
-            if (!Seance) {
+            const seance = await SeanceDAO.findById(id);
+            if (!seance) {
                 return res.status(404).json({ message: 'Seance not found' });
             }
-            res.status(200).json(Seance);
+
+            const [film, salle] = await Promise.all([
+                filmDAO.findById(seance.film),
+                salleDAO.findById(seance.salle),
+            ]);
+
+            if (!film) {
+                return res.status(404).json({ message: 'Film not found' });
+            }
+
+            if (!salle) {
+                return res.status(404).json({ message: 'Salle not found' });
+            }
+
+            seance.film = film;
+            seance.salle = salle;
+
+            res.status(200).json(seance);
         } catch (error) {
             res.status(500).json({ message: error.message });
         }
     }
+
 
     // Create a new Seance
     async create(req, res) {
         const { status, durationTime, filmId, salleId, description, showTime } = req.body;
         try {
             const film = await filmDAO.findById(filmId);
-            const salle = await salleDao.findById(salleId);
+            const salle = await salleDAO.findById(salleId);
             if (!film) {
                 return res.status(404).json({ message: 'Film not found' });
             }
@@ -55,7 +92,7 @@ class SeanceController {
         const { status, durationTime, filmId, salleId, description, showTime } = req.body;
         try {
             const film = await filmDAO.findById(filmId);
-            const salle = await salleDao.findById(salleId);
+            const salle = await salleDAO.findById(salleId);
             if (!film) {
                 return res.status(404).json({ message: 'Film not found' });
             }

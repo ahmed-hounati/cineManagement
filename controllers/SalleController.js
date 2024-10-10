@@ -1,3 +1,4 @@
+const ReservationDAO = require('../dao/reservationDAO');
 const SalleDAO = require('../dao/salleDAO');
 
 
@@ -12,19 +13,48 @@ class SalleController {
         }
     }
 
-    // Get an Salle by ID
+
+
     async getSalle(req, res) {
         const { id } = req.params;
+        const { seanceId } = req.query;
+
         try {
             const Salle = await SalleDAO.findById(id);
             if (!Salle) {
                 return res.status(404).json({ message: 'Salle not found' });
             }
-            res.status(200).json(Salle);
+
+            const capacity = parseInt(Salle.capacity);
+
+            const places = Array.from({ length: capacity }, (_, index) => (index + 1).toString());
+
+            const reservedPlaces = [];
+            const availablePlaces = places.slice();
+            for (let place of places) {
+                const existingReservations = await ReservationDAO.findBySeanceAndPlace(seanceId, place);
+                if (existingReservations.length > 0) {
+                    reservedPlaces.push(place);
+                    availablePlaces.splice(availablePlaces.indexOf(place), 1);
+                }
+            }
+            res.status(200).json({
+                salle: Salle,
+                reservedPlaces,
+                availablePlaces,
+            });
         } catch (error) {
             res.status(500).json({ message: error.message });
         }
     }
+
+
+
+
+
+
+
+
 
     // Create a new Salle
     async create(req, res) {

@@ -94,7 +94,7 @@ class UserController {
                 { expiresIn: '1h' }
             );
 
-            res.status(200).json({ token });
+            res.status(200).json({ token, User });
         } catch (error) {
             res.status(500).json({ message: error.message });
         }
@@ -163,7 +163,7 @@ class UserController {
 
         const resetToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
-        const resetLink = `https://your-app.com/reset-password/${resetToken}`;
+        const resetLink = `http://localhost:5173/reset-password/${resetToken}`;
 
         try {
             await sendMail(
