@@ -6,6 +6,11 @@ const filmSchema = new mongoose.Schema({
     duration: { type: String, required: true },
     status: { type: String, required: true },
     image: { type: String, required: true },
+    video: { type: String, required: true },
+    ratings: [{
+        user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        rating: { type: Number, required: true, min: 1, max: 5 }
+    }]
 
 }, {
     timestamps: true,

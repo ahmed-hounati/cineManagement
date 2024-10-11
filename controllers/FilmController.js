@@ -1,6 +1,7 @@
 const filmDAO = require('../dao/filmDAO');
 const FilmDAO = require('../dao/filmDAO');
-const FilmModel = require('../models/FilmModel');
+const userDAO = require('../dao/userDAO');
+const jwt = require('jsonwebtoken');
 
 
 
@@ -32,17 +33,18 @@ class FilmController {
     // Create a new Film
     async create(req, res) {
         try {
-            if (!req.files || !req.files.poster) {
-                return res.status(400).json({ message: "Poster files are required" });
+            if (!req.files || !req.files.poster || !req.files.video) {
+                return res.status(400).json({ message: "image or video files are required" });
             }
-            const savedMovie = await filmDAO.create(req.body, {
+            const savedFilm = await FilmDAO.create(req.body, {
                 poster: req.files.poster[0],
+                video: req.files.video[0]
             });
             res.status(200).json({
-                message: "movie created successfully", movie: savedMovie
+                message: "movie created successfully", film: savedFilm
             });
         } catch (err) {
-            res.status(500).send({ message: err.message || "Some error occurred while creating a movie" });
+            res.status(500).send({ message: err.message || "an error while adding a film" });
         }
     }
 
@@ -76,6 +78,69 @@ class FilmController {
         }
     }
 
+
+    async rateFilm(req, res) {
+        const { id } = req.params;
+        const { rating } = req.body;
+        const token = req.headers['authorization']?.split(' ')[1];
+        if (!token) {
+            return res.status(401).json({ message: 'Token not provided' });
+        }
+
+        // Decode the token to get the user information
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const userId = decoded.id;
+
+        const user = await userDAO.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        if (!rating || rating < 1 || rating > 5) {
+            return res.status(400).json({ message: 'Rating must be between 1 and 5' });
+        }
+
+        try {
+            const film = await filmDAO.findById(id);
+            if (!film) {
+                return res.status(404).json({ message: 'Film not found' });
+            }
+
+            const existingRating = film.ratings.find(r => r.user.toString() === userId.toString());
+
+            if (existingRating) {
+                existingRating.rating = rating;
+            } else {
+                film.ratings.push({ user: userId, rating });
+            }
+            await film.save();
+
+            return res.status(200).json({ message: 'Rating submitted successfully', film });
+        } catch (error) {
+            return res.status(500).json({ message: 'Server error', error });
+        }
+    };
+
+
+    async getAverageRating(req, res) {
+        const { id } = req.params;
+
+        try {
+            const film = await filmDAO.findById(id);
+            if (!film) {
+                return res.status(404).json({ message: 'Film not found' });
+            }
+
+            // Calculate the average rating
+            const totalRatings = film.ratings.length;
+            const ratingSum = film.ratings.reduce((acc, curr) => acc + curr.rating, 0);
+            const averageRating = totalRatings ? (ratingSum / totalRatings).toFixed(1) : 0;
+
+            return res.status(200).json({ averageRating, totalRatings });
+        } catch (error) {
+            return res.status(500).json({ message: 'Server error', error });
+        }
+    };
 
 }
 

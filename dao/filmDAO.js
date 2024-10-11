@@ -26,13 +26,19 @@ class FilmDAO {
             throw new Error("File is required");
         }
 
+        if (!files.video) {
+            throw new Error("video is required");
+        }
+
         const posterUrl = await this.uploadMoviePoster(files.poster, 'posters');
+        const video = await this.uploadMoviePoster(files.video, 'videos');
 
         const movie = new Film({
             name,
             description,
             image: posterUrl,
             duration,
+            video: video,
             status
         });
 

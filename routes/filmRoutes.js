@@ -11,5 +11,7 @@ router.get('/:id', verifyToken, (req, res) => filmController.getFilm(req, res));
 router.post('/create', verifyToken, checkRole('admin'), upload, (req, res) => filmController.create(req, res));
 router.put('/update/:id', verifyToken, checkRole('admin'), (req, res) => filmController.updateFilm(req, res));
 router.delete('/delete/:id', verifyToken, checkRole('admin'), (req, res) => filmController.deleteFilm(req, res));
+router.post('/rate/:id', filmController.rateFilm);
+router.get('/average-rating/:id', filmController.getAverageRating);
 
 module.exports = router;

@@ -101,7 +101,7 @@ class UserController {
     }
 
     async register(req, res) {
-        const { name, email, password, status, role } = req.body;
+        const { name, email, password, role } = req.body;
 
         // Check if email is already registered
         try {
@@ -116,7 +116,8 @@ class UserController {
                 name,
                 email,
                 password: hashedPassword,
-                status: status || 'active',
+                status: 'active',
+                subscribe: 'premium',
                 role: role
             });
 
@@ -134,7 +135,8 @@ class UserController {
                     _id: newUser._id,
                     email: newUser.email,
                     status: newUser.status,
-                    role: newUser.role
+                    role: newUser.role,
+                    subscribe: newUser.subscribe
                 },
                 token
             });
