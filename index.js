@@ -8,6 +8,7 @@ const filmRoutes = require('./routes/filmRoutes');
 const salleRoutes = require('./routes/salleRoutes');
 const seanceRoutes = require('./routes/seanceRoutes');
 const reservationRoutes = require('./routes/reservationRoutes');
+const commentRoutes = require('./routes/commentRoutes');
 require('dotenv').config();
 
 
@@ -30,6 +31,7 @@ app.use('/api/film', filmRoutes);
 app.use('/api/salle', salleRoutes);
 app.use('/api/seance', seanceRoutes);
 app.use('/api/reservation', reservationRoutes);
+app.use('/api/comment', commentRoutes);
 
 
 

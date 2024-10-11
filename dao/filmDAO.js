@@ -20,7 +20,7 @@ class FilmDAO {
 
 
     async create(FilmData, files) {
-        const { name, duration, description, status } = FilmData;
+        const { name, duration, description, status, category } = FilmData;
 
         if (!files.poster) {
             throw new Error("File is required");
@@ -28,6 +28,9 @@ class FilmDAO {
 
         if (!files.video) {
             throw new Error("video is required");
+        }
+        if (!category) {
+            throw new Error("category required");
         }
 
         const posterUrl = await this.uploadMoviePoster(files.poster, 'posters');
@@ -39,7 +42,8 @@ class FilmDAO {
             image: posterUrl,
             duration,
             video: video,
-            status
+            status,
+            category: category
         });
 
         return await movie.save();

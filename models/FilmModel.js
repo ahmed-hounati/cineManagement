@@ -7,6 +7,7 @@ const filmSchema = new mongoose.Schema({
     status: { type: String, required: true },
     image: { type: String, required: true },
     video: { type: String, required: true },
+    category: { type: String, required: true },
     ratings: [{
         user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
         rating: { type: Number, required: true, min: 1, max: 5 }
