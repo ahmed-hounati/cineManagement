@@ -101,7 +101,7 @@ class UserController {
     }
 
     async register(req, res) {
-        const { name, email, password, role } = req.body;
+        const { name, email, password } = req.body;
 
         // Check if email is already registered
         try {
@@ -118,7 +118,7 @@ class UserController {
                 password: hashedPassword,
                 status: 'active',
                 subscribe: 'premium',
-                role: role
+                role: 'client'
             });
 
             // Generate JWT token

@@ -45,6 +45,7 @@ This project is a cinema management application designed to handle various tasks
 - Film Management
 - Screening Management
 - Reservation Management
+- Rooms Management
 
 ## Libraries
 
@@ -55,7 +56,7 @@ This project is a cinema management application designed to handle various tasks
 - **Mongoose**
 - **Nodemailer**
 - **Nodemon**
-- **Jest or Mocha**
+- **Jest**
 
 
 ## Documentation

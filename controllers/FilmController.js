@@ -142,6 +142,85 @@ class FilmController {
         }
     };
 
+
+    async addFav(req, res) {
+        const { id } = req.params;
+        const token = req.headers['authorization']?.split(' ')[1];
+        if (!token) {
+            return res.status(401).json({ message: 'Token not provided' });
+        }
+
+        try {
+            // Decode the token to get the user information
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            const userId = decoded.id;
+
+            const user = await userDAO.findById(userId);
+            if (!user) {
+                return res.status(404).json({ message: 'User not found' });
+            }
+
+            const film = await filmDAO.findById(id);
+            if (!film) {
+                return res.status(400).json({ message: 'Film not found' });
+            }
+
+            // Check if the film is already in the user's favorites
+            const existingFilm = user.favorites.find(fav => fav.toString() === id.toString());
+
+            if (existingFilm) {
+                return res.status(400).json({ message: 'Film already in favorites' });
+            }
+            user.favorites.push(id);
+            await user.save();
+
+            return res.status(200).json({ message: 'Film added to favorites' });
+        } catch (error) {
+            return res.status(500).json({ message: 'Server error', error });
+        }
+    }
+
+    async removeFav(req, res) {
+        const { id } = req.params;
+        const token = req.headers['authorization']?.split(' ')[1];
+
+        if (!token) {
+            return res.status(401).json({ message: 'Token not provided' });
+        }
+
+        try {
+            // Decode the token to get the user information
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            const userId = decoded.id;
+
+            // Find the user by ID
+            const user = await userDAO.findById(userId);
+            if (!user) {
+                return res.status(404).json({ message: 'User not found' });
+            }
+
+            const film = await filmDAO.findById(id);
+            if (!film) {
+                return res.status(400).json({ message: 'Film not found' });
+            }
+
+            const filmIndex = user.favorites.findIndex(fav => fav.toString() === id.toString());
+            if (filmIndex === -1) {
+                return res.status(400).json({ message: 'Film not found in favorites' });
+            }
+
+            user.favorites.splice(filmIndex, 1);
+            await user.save();
+
+            return res.status(200).json({ message: 'Film removed from favorites' });
+
+        } catch (error) {
+            console.error('Error removing from favorites:', error);
+            return res.status(500).json({ message: 'Server error', error });
+        }
+    }
+
+
 }
 
 module.exports = new FilmController();
