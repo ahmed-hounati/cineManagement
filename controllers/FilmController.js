@@ -220,6 +220,43 @@ class FilmController {
         }
     }
 
+    async getFav(req, res) {
+        const token = req.headers['authorization']?.split(' ')[1];
+
+        if (!token) {
+            return res.status(401).json({ message: 'Token not provided' });
+        }
+
+        try {
+            // Decode the token to get the user information
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            const userId = decoded.id;
+
+            // Find the user by ID
+            const user = await userDAO.findById(userId);
+            if (!user) {
+                return res.status(404).json({ message: 'User not found' });
+            }
+
+            // Get the user's favorite films
+            const filmsIds = user.favorites;
+            const favFilms = [];
+
+            for (let filmId of filmsIds) {
+                const film = await filmDAO.findById(filmId);
+
+                if (film) {
+                    favFilms.push(film);
+                }
+            }
+
+            res.status(200).json(favFilms);
+        } catch (error) {
+            res.status(500).json({ message: error.message });
+        }
+    }
+
+
 
 }
 
