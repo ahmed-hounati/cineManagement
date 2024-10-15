@@ -4,7 +4,7 @@ const verifyToken = require('../middlewares/auth');
 const checkRole = require('../middlewares/role');
 const router = express.Router();
 
-router.get('/', verifyToken, (req, res) => ReservationController.getReservations(req, res));
+router.get('/', verifyToken, (req, res) => ReservationController.getAllReservations(req, res));
 router.get('/:id', verifyToken, (req, res) => ReservationController.getReservation(req, res));
 router.post('/create', verifyToken, (req, res) => ReservationController.create(req, res));
 router.put('/update/:id', verifyToken, (req, res) => ReservationController.updateReservation(req, res));

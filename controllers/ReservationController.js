@@ -10,9 +10,20 @@ const sendMail = require('../email');
 
 class ReservationController {
     // Get all Reservations
-    async getReservations(req, res) {
+    async getAllReservations(req, res) {
+        const token = req.headers['authorization']?.split(' ')[1];
+        if (!token) {
+            return res.status(401).json({ message: 'Token not provided' });
+        }
         try {
-            const Reservations = await ReservationDAO.findAll();
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            const userId = decoded.id;
+
+            const user = await userDAO.findById(userId);
+            if (!user) {
+                return res.status(404).json({ message: 'User not found' });
+            }
+            const Reservations = await ReservationDAO.countByUserId(userId);
             res.status(200).json(Reservations);
         } catch (error) {
             res.status(500).json({ message: error.message });

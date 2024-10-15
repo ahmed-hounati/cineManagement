@@ -45,10 +45,21 @@ class UserController {
 
     // Update a User
     async updateUser(req, res) {
-        const { id } = req.params;
-        const { status, password, email, name } = req.body;
+        const token = req.headers['authorization']?.split(' ')[1];
+        if (!token) {
+            return res.status(401).json({ message: 'No token provided' });
+        }
+
         try {
-            const updatedUser = await UserDAO.updateById(id, { status, password, email, name });
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            const userIDe = decoded.id;
+            const user = await UserDAO.findById(userIDe);
+
+            if (!user) {
+                return res.status(401).json({ message: 'try again later ...' });
+            }
+            const { email, name } = req.body;
+            const updatedUser = await UserDAO.updateById(user.id, { email, name });
             if (!updatedUser) {
                 return res.status(404).json({ message: 'User not found' });
             }

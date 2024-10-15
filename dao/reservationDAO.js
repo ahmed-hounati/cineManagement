@@ -62,6 +62,14 @@ class ReservationDAO {
             throw new Error('Error fetching reservations: ' + error.message);
         }
     }
+
+    async countByUserId(userId) {
+        try {
+            return await Reservation.countDocuments(userId);
+        } catch (error) {
+            throw new Error('Error fetching reservations: ' + error.message);
+        }
+    }
 }
 
 module.exports = new ReservationDAO();
