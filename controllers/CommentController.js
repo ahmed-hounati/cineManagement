@@ -10,16 +10,31 @@ class CommentController {
     async getFilmComments(req, res) {
         const { filmId } = req.params;
         try {
+            // Find the film by ID
             const film = await filmDAO.findById(filmId);
             if (!film) {
-                res.status(400).json("no film found");
+                return res.status(400).json({ message: "No film found" });
             }
-            const Comments = await CommentDAO.findAllForFilm(filmId);
-            res.status(200).json(Comments);
+
+            // Get all comments for the film
+            const comments = await CommentDAO.findAllForFilm(filmId);
+
+            const commentsWithUser = await Promise.all(
+                comments.map(async (comment) => {
+                    const user = await userDAO.findById(comment.user);
+                    return {
+                        ...comment.toObject(),
+                        user: user ? user.toObject() : null,
+                    };
+                })
+            );
+
+            res.status(200).json(commentsWithUser);
         } catch (error) {
             res.status(500).json({ message: error.message });
         }
     }
+
 
 
     // Create a new Comment
